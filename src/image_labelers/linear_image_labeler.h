@@ -108,8 +108,13 @@ class LinearImageLabeler : public AbstractImageLabeler {
           // point doesn't fit
           continue;
         }
+        if (neighbor.col < 0 || neighbor.col >= _label_image.cols) {
+          // point doesn't fit
+          continue;
+        }
+
         // if we just went over the borders in horiz direction - wrap around
-        neighbor.col = WrapCols(neighbor.col);
+        // neighbor.col = WrapCols(neighbor.col);
         uint16_t neigh_label = LabelAt(neighbor);
         if (neigh_label > 0) {
           // we have already labeled this one
