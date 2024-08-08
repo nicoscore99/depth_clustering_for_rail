@@ -24,7 +24,6 @@
 #include <string>
 #include <vector>
 
-#include "image_labelers/dijkstra_image_labeler.h"
 #include "image_labelers/linear_image_labeler.h"
 
 using std::string;
@@ -212,124 +211,6 @@ TEST(LinearImageLabeler, TwoLabelImageHorizontal) {
 // 0.0 | 0.0 | 0.0 | 0.5 | 0.0     2 2 2 1 2
 //
 TEST(LinearImageLabeler, MultiClassHard) {
-  int size = 5;
-  Mat depth_image = cv::Mat::ones(size, size, DataType<float>::type);
-  depth_image.at<float>(0, 0) = 0.5f;
-  depth_image.at<float>(2, 0) = 0.5f;
-  depth_image.at<float>(2, 1) = 0.5f;
-  depth_image.at<float>(0, 2) = 0.5f;
-  depth_image.at<float>(2, 3) = 0.5f;
-  depth_image.at<float>(3, 3) = 0.5f;
-  depth_image.at<float>(4, 3) = 0.5f;
-  depth_image.at<float>(1, 4) = 0.5f;
-  depth_image.at<float>(0, 4) = 0.5f;
-  depth_image.at<float>(2, 4) = 0.5f;
-
-  Radians threshold = 20_deg;
-  ProjectionParams params;
-  params.SetSpan(SpanParams(0_deg, 1_deg * size, size),
-                 SpanParams::Direction::VERTICAL);
-  params.SetSpan(SpanParams(0_deg, 1_deg * size, size),
-                 SpanParams::Direction::HORIZONTAL);
-  LinearImageLabeler<1, 1> labeler(depth_image, params, threshold);
-  labeler.ComputeLabels(DiffFactory::DiffType::ANGLES);
-  auto label_image = labeler.GetLabelImage();
-
-  ASSERT_EQ(1, label_image->at<uint16_t>(0, 0));
-  ASSERT_EQ(1, label_image->at<uint16_t>(2, 0));
-  ASSERT_EQ(1, label_image->at<uint16_t>(2, 1));
-  ASSERT_EQ(1, label_image->at<uint16_t>(2, 3));
-  ASSERT_EQ(1, label_image->at<uint16_t>(3, 3));
-  ASSERT_EQ(1, label_image->at<uint16_t>(4, 3));
-  ASSERT_EQ(1, label_image->at<uint16_t>(1, 4));
-  ASSERT_EQ(1, label_image->at<uint16_t>(2, 4));
-  ASSERT_EQ(1, label_image->at<uint16_t>(0, 4));
-
-  ASSERT_EQ(2, label_image->at<uint16_t>(1, 0));
-  ASSERT_EQ(2, label_image->at<uint16_t>(1, 1));
-  ASSERT_EQ(2, label_image->at<uint16_t>(4, 4));
-
-  ASSERT_EQ(3, label_image->at<uint16_t>(0, 2));
-}
-
-// the image looks approx like this:
-//            depth             expected labels
-// 0.0 | 0.0 | 0.5 | 0.0 | 0.0     1 1 2 1 1
-// 0.0 | 0.0 | 0.5 | 0.0 | 0.0     1 1 2 1 1
-// 0.0 | 0.0 | 0.5 | 0.0 | 0.0     1 1 2 1 1
-// 0.0 | 0.0 | 0.5 | 0.0 | 0.0     1 1 2 1 1
-// 0.0 | 0.0 | 0.5 | 0.0 | 0.0     1 1 2 1 1
-//
-TEST(DijkstraImageLabeler, TwoLabelImageVertical) {
-  int size = 5;
-  Mat depth_image = cv::Mat::ones(size, size, DataType<float>::type);
-  for (int i = 0; i < size; ++i) {
-    depth_image.at<float>(i, 2) = 0.5f;
-  }
-  Radians threshold = 20_deg;
-  ProjectionParams params;
-  params.SetSpan(SpanParams(0_deg, 1_deg * size, size),
-                 SpanParams::Direction::VERTICAL);
-  params.SetSpan(SpanParams(0_deg, 1_deg * size, size),
-                 SpanParams::Direction::HORIZONTAL);
-  LinearImageLabeler<1, 1> labeler(depth_image, params, threshold);
-  labeler.ComputeLabels(DiffFactory::DiffType::ANGLES);
-  auto label_image = labeler.GetLabelImage();
-  EXPECT_EQ(2, label_image->at<uint16_t>(0, 2));
-  EXPECT_EQ(2, label_image->at<uint16_t>(4, 2));
-
-  EXPECT_EQ(1, label_image->at<uint16_t>(0, 0));
-  EXPECT_EQ(1, label_image->at<uint16_t>(4, 0));
-
-  EXPECT_EQ(1, label_image->at<uint16_t>(0, 3));
-  EXPECT_EQ(1, label_image->at<uint16_t>(4, 3));
-
-  EXPECT_EQ(1, label_image->at<uint16_t>(0, 4));
-  EXPECT_EQ(1, label_image->at<uint16_t>(4, 4));
-}
-
-// the image looks approx like this:
-//            depth             expected labels
-// 0.0 | 0.0 | 0.0 | 0.0 | 0.0     1 1 1 1 1
-// 0.0 | 0.0 | 0.0 | 0.0 | 0.0     1 1 1 1 1
-// 0.5 | 0.5 | 0.5 | 0.5 | 0.5     2 2 2 2 2
-// 0.0 | 0.0 | 0.0 | 0.0 | 0.0     3 3 3 3 3
-// 0.0 | 0.0 | 0.0 | 0.0 | 0.0     3 3 3 3 3
-//
-TEST(DijkstraImageLabeler, TwoLabelImageHorizontal) {
-  int size = 5;
-  Mat depth_image = cv::Mat::ones(size, size, DataType<float>::type);
-  for (int i = 0; i < size; ++i) {
-    depth_image.at<float>(2, i) = 0.5f;
-  }
-  Radians threshold = 20_deg;
-  ProjectionParams params;
-  params.SetSpan(SpanParams(0_deg, 1_deg * size, size),
-                 SpanParams::Direction::VERTICAL);
-  params.SetSpan(SpanParams(0_deg, 1_deg * size, size),
-                 SpanParams::Direction::HORIZONTAL);
-  LinearImageLabeler<1, 1> labeler(depth_image, params, threshold);
-  labeler.ComputeLabels(DiffFactory::DiffType::ANGLES);
-  auto label_image = labeler.GetLabelImage();
-  ASSERT_EQ(2, label_image->at<uint16_t>(2, 0));
-  ASSERT_EQ(2, label_image->at<uint16_t>(2, 4));
-
-  ASSERT_EQ(1, label_image->at<uint16_t>(0, 0));
-  ASSERT_EQ(1, label_image->at<uint16_t>(0, 3));
-
-  ASSERT_EQ(3, label_image->at<uint16_t>(4, 0));
-  ASSERT_EQ(3, label_image->at<uint16_t>(4, 3));
-}
-
-// the image looks approx like this:
-//            depth             expected labels
-// 0.5 | 0.0 | 0.5 | 0.0 | 0.5     1 2 3 2 1
-// 0.0 | 0.0 | 0.0 | 0.0 | 0.5     2 2 2 2 1
-// 0.5 | 0.5 | 0.0 | 0.5 | 0.5     1 1 2 1 1
-// 0.0 | 0.0 | 0.0 | 0.5 | 0.0     2 2 2 1 2
-// 0.0 | 0.0 | 0.0 | 0.5 | 0.0     2 2 2 1 2
-//
-TEST(DijkstraImageLabeler, MultiClassHard) {
   int size = 5;
   Mat depth_image = cv::Mat::ones(size, size, DataType<float>::type);
   depth_image.at<float>(0, 0) = 0.5f;
