@@ -38,13 +38,30 @@ void SphericalProjection::InitFromPoints(
     size_t bin_rows = this->_params.RowFromAngle(angle_rows);
     size_t bin_cols = this->_params.ColFromAngle(angle_cols);
     // adding point pointer
-    this->at(bin_rows, bin_cols).points().push_back(index);
+    // this->at(bin_rows, bin_cols).points().push_back(index);
     auto& current_written_depth =
         this->_depth_image.template at<float>(bin_rows, bin_cols);
-    if (current_written_depth < dist_to_sensor) {
+
+    if (this->at(bin_rows, bin_cols).points().size() == 0) {
       // write this point to the image only if it is closer
+      this->at(bin_rows, bin_cols).points().push_back(index);
       current_written_depth = dist_to_sensor;
+    } else if (this->at(bin_rows, bin_cols).points().size() > 0) {
+      // write this point to the image only if it is closer
+      if (current_written_depth < dist_to_sensor) {
+
+        // replace the point in the image with the new point
+        this->at(bin_rows, bin_cols).points().pop_back();
+        this->at(bin_rows, bin_cols).points().push_back(index);
+
+        current_written_depth = dist_to_sensor;
+      }
     }
+  
+    // if (current_written_depth < dist_to_sensor) {
+    //   // write this point to the image only if it is closer
+    //   current_written_depth = dist_to_sensor;
+    // }
   }
   FixDepthSystematicErrorIfNeeded();
 }

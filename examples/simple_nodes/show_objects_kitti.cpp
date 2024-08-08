@@ -60,7 +60,8 @@ void ReadData(const Radians& angle_tollerance, const string& in_path,
   auto cloud_reader =
       FolderReader(in_path, ".bin", FolderReader::Order::SORTED);
 
-  auto proj_params_ptr = ProjectionParams::HDL_64();
+  // auto proj_params_ptr = ProjectionParams::HDL_64();
+  auto proj_params_ptr = ProjectionParams::ROBOSENSE();
 
   auto depth_ground_remover = DepthGroundRemover(
       *proj_params_ptr, ground_remove_angle, smooth_window_size);
@@ -101,10 +102,10 @@ int main(int argc, char* argv[]) {
   TCLAP::CmdLine cmd(
       "Loads clouds from KITTI data and performs clustering on them.", ' ',
       "1.0");
-  TCLAP::ValueArg<int> angle_arg(
+  TCLAP::ValueArg<float> angle_arg(
       "", "angle",
       "Threshold angle. Below this value, the objects are separated", false, 10,
-      "int");
+      "float");
   TCLAP::ValueArg<string> path_to_data_arg(
       "", "path", "Path to folder that stores the data", true, "", "string");
 

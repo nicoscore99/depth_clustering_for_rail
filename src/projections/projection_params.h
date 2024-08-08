@@ -196,6 +196,12 @@ class ProjectionParams {
    *
    * @return     A pointer to parameters
    */
+  static std::unique_ptr<ProjectionParams> ROBOSENSE();
+  /**
+   * @brief      Parameters for Robosense assuming equal spacing between the
+   *
+   * @return     A pointer to parameters
+   */
   static std::unique_ptr<ProjectionParams> FromConfigFile(
       const std::string& path);
   /**

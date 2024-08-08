@@ -70,6 +70,9 @@ int main(int argc, char* argv[]) {
     case 64:
       proj_params_ptr = ProjectionParams::HDL_64();
       break;
+    default:
+      proj_params_ptr = ProjectionParams::ROBOSENSE();
+      break;
   }
   if (!proj_params_ptr) {
     fprintf(stderr,

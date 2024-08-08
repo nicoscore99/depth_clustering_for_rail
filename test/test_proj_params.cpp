@@ -96,6 +96,12 @@ TEST(TestProjParams, velodyne_64_equal) {
   EXPECT_EQ(870ul, params_ptr->cols());
 }
 
+TEST(TestProjParams, robosense) {
+  auto params_ptr = ProjectionParams::ROBOSENSE();
+  EXPECT_EQ(true, params_ptr->valid());
+  EXPECT_EQ(62ul, params_ptr->rows());
+  EXPECT_EQ(600ul, params_ptr->cols());
+}
 
 TEST(TestProjParams, full_sphere) {
   auto params_ptr = ProjectionParams::FullSphere(1_deg);
