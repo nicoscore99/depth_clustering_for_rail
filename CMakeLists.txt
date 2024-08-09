@@ -18,8 +18,13 @@
 ## FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ## DEALINGS IN THE SOFTWARE.
 
-cmake_minimum_required(VERSION 3.1)
-project(depth_clustering)
+cmake_minimum_required(VERSION 3.5)
+project(depth_clustering_for_rail)
+
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
 include(DistVersion.cmake)
 system_info(DISTRO)
@@ -73,6 +78,7 @@ if(BUILD_WITH_COVERAGE)
   set(CMAKE_CXX_FLAGS "-fprofile-arcs -ftest-coverage ${CMAKE_CXX_FLAGS}")
 endif()
 
+find_package(rclcpp REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
@@ -113,15 +119,37 @@ message(STATUS "Linking against QGlViewer lib: ${QGLVIEWER_LIBRARY}")
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin COMPONENTS
-  roscpp
+# find_package(catkin COMPONENTS
+#   roscpp
+#   sensor_msgs
+#   std_msgs
+#   nav_msgs
+#   message_filters
+#   tf
+#   eigen_conversions
+# )
+
+find_package(ament_cmake REQUIRED
+  rclcpp
   sensor_msgs
   std_msgs
   nav_msgs
   message_filters
-  tf
+  tf2
   eigen_conversions
 )
+
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  # the following line skips the linter which checks for copyrights
+  # comment the line when a copyright and license is added to all source files
+  set(ament_cmake_copyright_FOUND TRUE)
+  # the following line skips cpplint (only works in a git repo)
+  # comment the line when this package is in a git repo and when
+  # a copyright and license is added to all source files
+  set(ament_cmake_cpplint_FOUND TRUE)
+  ament_lint_auto_find_test_dependencies()
+endif()
 
 # add some useful constants to configuration
 configure_file(config/cmake_config.h.in
@@ -143,7 +171,7 @@ else()
   message(WARNING "PCL NOT FOUND! PCL-related code WILL NOT be built")
 endif()
 
-if(${roscpp_FOUND})
+if(${rclcpp_FOUND})
   message(STATUS "ROS found, building ROS related parts")
   set(ROS_FOUND YES)
 else()
@@ -151,24 +179,26 @@ else()
   set(ROS_FOUND NO)
 endif()
 
-catkin_package(
- INCLUDE_DIRS src
- LIBRARIES
-      cloud
-      identifiable
-      ground_remove
-      difference
-      image_labeler
-      projections
-      ros_bridge
-      velodyne_utils
-      folder_reader
-      visualization
- CATKIN_DEPENDS roscpp sensor_msgs std_msgs nav_msgs message_filters tf
-)
+# catkin_package(
+#  INCLUDE_DIRS src
+#  LIBRARIES
+#       cloud
+#       identifiable
+#       ground_remove
+#       difference
+#       image_labeler
+#       projections
+#       ros_bridge
+#       velodyne_utils
+#       folder_reader
+#       visualization
+#  CATKIN_DEPENDS roscpp sensor_msgs std_msgs nav_msgs message_filters tf
+# )
 
 include_directories(
+  include
   src
+  src/ros2
   # for QT moc files
   ${PROJECT_BINARY_DIR}/src
   # dependencies we have no control over
@@ -179,13 +209,15 @@ include_directories(
   # -I/usr/local/include/opencv4
   SYSTEM ${OpenGL_INCLUDE_DIRS}
   SYSTEM ${QGLVIEWER_INCLUDE_DIR}
-  SYSTEM ${catkin_INCLUDE_DIRS}
 )
 
 add_subdirectory(src)
 add_subdirectory(examples)
+add_subdirectory(src/ros2)
 
 message(STATUS "BUILD_TESTING: ${BUILD_TESTING}")
 if (${BUILD_TESTING})
   add_subdirectory(test)
 endif()
+
+ament_package()

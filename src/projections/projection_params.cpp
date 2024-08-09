@@ -147,34 +147,6 @@ size_t ProjectionParams::FindClosest(const vector<Radians>& vec,
   return diff_next < diff_prev ? found : found - 1;
 }
 
-std::unique_ptr<ProjectionParams> ProjectionParams::VLP_16() {
-  auto params = ProjectionParams();
-  params.SetSpan(SpanParams(-180_deg, 180_deg, 870),
-                 SpanParams::Direction::HORIZONTAL);
-  params.SetSpan(SpanParams(15_deg, -15_deg, 16),
-                 SpanParams::Direction::VERTICAL);
-  params.FillCosSin();
-  if (!params.valid()) {
-    fprintf(stderr, "ERROR: params are not valid!\n");
-    return nullptr;
-  }
-  return mem_utils::make_unique<ProjectionParams>(params);
-}
-
-std::unique_ptr<ProjectionParams> ProjectionParams::HDL_32() {
-  auto params = ProjectionParams();
-  params.SetSpan(SpanParams(-180_deg, 180_deg, 870),
-                 SpanParams::Direction::HORIZONTAL);
-  params.SetSpan(SpanParams(10.0_deg, -30.0_deg, 32),
-                 SpanParams::Direction::VERTICAL);
-  params.FillCosSin();
-  if (!params.valid()) {
-    fprintf(stderr, "ERROR: params are not valid!\n");
-    return nullptr;
-  }
-  return mem_utils::make_unique<ProjectionParams>(params);
-}
-
 std::unique_ptr<ProjectionParams> ProjectionParams::HDL_64_EQUAL() {
   auto params = ProjectionParams();
   params.SetSpan(SpanParams(-180_deg, 180_deg, 870),

@@ -68,24 +68,11 @@ TEST(TestProjParams, from_angle) {
   EXPECT_EQ(9ul, params.RowFromAngle(10_deg));
 }
 
-TEST(TestProjParams, velodyne_16) {
-  auto params_ptr = ProjectionParams::VLP_16();
-  EXPECT_EQ(true, params_ptr->valid());
-  EXPECT_EQ(16ul, params_ptr->rows());
-  EXPECT_EQ(870ul, params_ptr->cols());
-}
 
 TEST(TestProjParams, velodyne_64) {
   auto params_ptr = ProjectionParams::HDL_64();
   EXPECT_EQ(true, params_ptr->valid());
   EXPECT_EQ(64ul, params_ptr->rows());
-  EXPECT_EQ(870ul, params_ptr->cols());
-}
-
-TEST(TestProjParams, velodyne_32) {
-  auto params_ptr = ProjectionParams::HDL_32();
-  EXPECT_EQ(true, params_ptr->valid());
-  EXPECT_EQ(32ul, params_ptr->rows());
   EXPECT_EQ(870ul, params_ptr->cols());
 }
 

@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
-<package>
-  <name>depth_clustering</name>
+<package format="3">
+  <name>depth_clustering_for_rail</name>
   <version>1.1.0</version>
-  <description>The depth_clustering package</description>
+  <description>The depth_clustering_for_rail package</description>
 
-  <maintainer email="igor.bogoslavskyi@uni-bonn.de">Igor Bogoslavskyi</maintainer>
+  <maintainer email="nicolas.stillhard@gmail.com">Nicolas Stillhard</maintainer>
 
   <license>MIT</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
@@ -17,19 +17,19 @@
   <build_depend>tf</build_depend>
   <build_depend>eigen_conversions</build_depend>
 
-  <run_depend>roscpp</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>std_msgs</run_depend>
-  <run_depend>nav_msgs</run_depend>
-  <run_depend>message_filters</run_depend>
-  <run_depend>tf</run_depend>
-  <run_depend>eigen_conversions</run_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>message_filters</exec_depend>
+  <exec_depend>tf</exec_depend>
+  <exec_depend>eigen_conversions</exec_depend>
 
-  <test_depend>rosunit</test_depend>
-
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->
-
+    <build_type>ament_cmake</build_type>
   </export>
 </package>
