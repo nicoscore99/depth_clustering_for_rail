@@ -43,7 +43,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-cmake_policy(SET CMP0045 OLD)
+# cmake_policy(SET CMP0045 OLD)
 
 SET(CMAKE_MODULE_PATH
       ${CMAKE_MODULE_PATH}
@@ -77,15 +77,6 @@ if(BUILD_WITH_COVERAGE)
   message(STATUS "Enabled generation of code coverage information with gcc.")
   set(CMAKE_CXX_FLAGS "-fprofile-arcs -ftest-coverage ${CMAKE_CXX_FLAGS}")
 endif()
-
-find_package(rclcpp REQUIRED)
-find_package(Threads REQUIRED)
-find_package(Eigen3 REQUIRED)
-find_package(OpenCV REQUIRED)
-find_package(OpenGL REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system filesystem regex program_options)
-find_package(PCL QUIET COMPONENTS common io)
-find_package(QGLViewer REQUIRED)
 
 # find correct qt version
 if(${DISTRO} MATCHES "14.04")
@@ -126,16 +117,12 @@ find_package(tf2 REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(foxg)
-
-# find_package(ament_cmake REQUIRED
-#   rclcpp
-#   sensor_msgs
-#   std_msgs
-#   nav_msgs
-#   message_filters
-#   tf2
-#   eigen_conversions
-# )
+find_package(Threads REQUIRED)
+find_package(OpenCV REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system filesystem regex program_options)
+find_package(PCL QUIET COMPONENTS common io)
+find_package(QGLViewer REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -177,22 +164,6 @@ else()
   set(ROS_FOUND NO)
 endif()
 
-# catkin_package(
-#  INCLUDE_DIRS src
-#  LIBRARIES
-#       cloud
-#       identifiable
-#       ground_remove
-#       difference
-#       image_labeler
-#       projections
-#       ros_bridge
-#       velodyne_utils
-#       folder_reader
-#       visualization
-#  CATKIN_DEPENDS roscpp sensor_msgs std_msgs nav_msgs message_filters tf
-# )
-
 include_directories(
   include
   src
@@ -209,7 +180,6 @@ include_directories(
 
 add_subdirectory(src)
 add_subdirectory(examples)
-add_subdirectory(src/ros2)
 
 message(STATUS "BUILD_TESTING: ${BUILD_TESTING}")
 if (${BUILD_TESTING})

@@ -36,9 +36,11 @@ using cv::DataType;
 using cv::Mat;
 using std::to_string;
 using time_utils::Timer;
+using depth_clustering::ProjectionParams;
 
 const cv::Point ANCHOR_CENTER = cv::Point(-1, -1);
 const int SAME_OUTPUT_TYPE = -1;
+
 
 void DepthGroundRemover::OnNewObjectReceived(const Cloud& cloud, const int) {
   // this can be done even faster if we switch to column-major implementation
