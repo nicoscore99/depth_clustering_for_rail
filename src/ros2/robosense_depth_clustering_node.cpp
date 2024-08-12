@@ -3,14 +3,21 @@
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
 
 #include "clusterers/image_based_clusterer.h"
 #include "ground_removal/depth_ground_remover.h"
-#include "projections/ring_projection.h"
+#include "projections/projection_params.h"
 #include "projections/spherical_projection.h"
+#include "utils/cloud.h"
+#include "utils/folder_reader.h"
 #include "utils/radians.h"
+#include "utils/timer.h"
+#include "utils/velodyne_utils.h"
 #include "tclap/CmdLine.h"
+
+
+#include "sensor_msgs/msg/point_cloud2.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
 
 namespace depth_clustering {
 
@@ -27,52 +34,67 @@ using std::thread;
 using std::unordered_map;
 using std::vector;
 
+template <class T>
+T BytesTo(const vector<uint8_t>& data, uint32_t start_idx) {
+  const size_t kNumberOfBytes = sizeof(T);
+  uint8_t byte_array[kNumberOfBytes];
+  // forward bit order (it is a HACK. We do not account for bigendianes)
+  for (size_t i = 0; i < kNumberOfBytes; ++i) {
+    byte_array[i] = data[start_idx + i];
+  }
+  T result;
+  std::copy(reinterpret_cast<const uint8_t*>(&byte_array[0]),
+            reinterpret_cast<const uint8_t*>(&byte_array[kNumberOfBytes]),
+            reinterpret_cast<uint8_t*>(&result));
+  return result;
+}
 
 class DepthClusteringNode : public rclcpp::Node,
-                            public AbstractClient<Cloud> {
- public:
-  DepthClusteringNode(const Radians& angle_tolerance, const string& in_path,
-                      const string& out_path, const std::unique_ptr<ProjectionParams>& proj_params_ptr,
-											const int min_cluster_size, const int max_cluster_size, const int smooth_window_size, const Radians& ground_remove_angle)
-      : Node("depth_clustering_node"),
-        _angle_tollerance(angle_tollerance),
-        _in_path(in_path),
-        _out_path(out_path) {
+                            public AbstractClient<std::unordered_map<uint16_t, Cloud>> {
+  
+  public:
 
-    cloud_callback_group = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-    rclcpp::SubscriptionOptions cloud_options;
-    cloud_options.callback_group = cloud_callback_group;
+    Radians _theta_separation_thes;
+    std::int16_t _min_cluster_size;
+    std::int16_t _max_cluster_size;
+    std::int16_t _smooth_window_size;
+    std::int16_t _ground_remove_angle;
+    std::unique_ptr<ProjectionParams> _proj_params_ptr;
 
+    DepthGroundRemover ground_remover;
+        
+    DepthClusteringNode(const Radians& theta_separation_thes, const Radians& ground_remove_angle, std::unique_ptr<ProjectionParams> proj_params_ptr,
+                        const int min_cluster_size, const int max_cluster_size, int smooth_window_size)
+        : Node("depth_clustering_node"),
+          AbstractClient<std::unordered_map<uint16_t, Cloud>>(),
+          _theta_separation_thes(theta_separation_thes),
+          _min_cluster_size(min_cluster_size),
+          _max_cluster_size(max_cluster_size),
+          _smooth_window_size(smooth_window_size),
+          _ground_remove_angle(ground_remove_angle.val()),
+          _proj_params_ptr(std::move(proj_params_ptr)),
+          ground_remover(*proj_params_ptr, ground_remove_angle, smooth_window_size)  // Initialized here
+    {
+
+      cloud_callback_group = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+      rclcpp::SubscriptionOptions cloud_options;
+      cloud_options.callback_group = cloud_callback_group;
 		
-    _cloud_subscriber = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        "/rslidar", 10,
-        std::bind(&DepthClusteringNode::cloud_callback, this, std::placeholders::_1, cloud_options));
+      cloud_subscriber = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+        "/rslidar_points", 
+        rclcpp::SensorDataQoS(),
+        std::bind(&DepthClusteringNode::cloud_callback, this, std::placeholders::_1),
+        cloud_options);
 
-		_bbox_publisher = this->create_publisher<visualization_msgs::msg::MarkerArray>(
-				"/bbox", 10);
+		  ImageBasedClusterer<LinearImageLabeler<>> clusterer(_theta_separation_thes, _ground_remove_angle, _smooth_window_size);
 
-		// Save variables
-		_angle_tolerance = angle_tolerance;
-		_min_cluster_size = min_cluster_size;
-		_max_cluster_size = max_cluster_size;
-		_smooth_window_size = smooth_window_size;
-		_ground_remove_angle = ground_remove_angle;
-		_proj_params_ptr = proj_params_ptr;
+      ground_remover.AddClient(&clusterer);
+      clusterer.AddClient(this);
+    }
 
-		auto ground_remover = DepthGroundRemover(
-				*proj_params_ptr, ground_remove_angle, smooth_window_size);
-
-		ImageBasedClusterer<LinearImageLabeler<>> clusterer(
-				angle_tollerance, ground_remove_angle, smooth_window_size);
-
-		ground_remover.AddClient(&clusterer);
-		clusterer.AddClient(this);
-
-	}
-
-  void OnNewObjectReceived(const unordered_map<uint16_t, Cloud>& clouds, const int) {
-    fprintf(stderr, "INFO: received %lu clusters\n", clouds.size());
-  }
+    void OnNewObjectReceived(const unordered_map<uint16_t, Cloud>& clouds, const int) {
+      fprintf(stderr, "INFO: received %lu clusters\n", clouds.size());
+    }
 
 	private:
 
@@ -112,7 +134,7 @@ class DepthClusteringNode : public rclcpp::Node,
     // }
 
 		Cloud::Ptr RosCloudToCloud(
-				const PointCloud2::ConstPtr& msg) {
+				const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
 			uint32_t x_offset = msg->fields[0].offset;
 			uint32_t y_offset = msg->fields[1].offset;
 			uint32_t z_offset = msg->fields[2].offset;
@@ -131,14 +153,19 @@ class DepthClusteringNode : public rclcpp::Node,
 				cloud.push_back(point);
 			}
 
-			return make_shared<Cloud>(cloud);
+			Cloud::Ptr cloud_ptr = boost::make_shared<Cloud>(cloud);
+      return cloud_ptr;
 		}
 
 	  void cloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
 	    Cloud::Ptr cloud_ptr = RosCloudToCloud(msg);
 			cloud_ptr -> InitProjection(*_proj_params_ptr);
-			depth_ground_remover.OnNewObjectReceived(*cloud_ptr, 0);
-		}
+			this->ground_remover.OnNewObjectReceived(*cloud_ptr, 0);
+    }
+
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cloud_subscriber;
+    rclcpp::CallbackGroup::SharedPtr cloud_callback_group;
+
 };
 
 
@@ -146,29 +173,34 @@ int main(int argc, char* argv[]) {
   TCLAP::CmdLine cmd(
       "Subscribe to /velodyne_points topic and save clusters to disc.", ' ',
       "1.0");
-  TCLAP::ValueArg<int> angle_arg(
+  TCLAP::ValueArg<int> theta_separation_thes_arg(
       "", "angle",
       "Threshold angle. Below this value, the objects are separated", false, 10,
       "int");
   TCLAP::ValueArg<int> num_beams_arg(
       "", "num_beams", "Num of vertical beams in laser. If number 64 is chosen, "
                       "HDL-64 projection params are used. Else Robosense per default",
-      true, 0, "int")
+      true, 0, "int");
   TCLAP::ValueArg<int> min_cluster_size_arg(
-      "", "min_cluster_size", "Minimum cluster size to save", false, 20, "int")
+      "", "min_cluster_size", "Minimum cluster size to save", false, 20, "int");
   TCLAP::ValueArg<int> max_cluster_size_arg(
-        "", "max_cluster_size", "Maximum cluster size to save", false, 100000, "int")
+        "", "max_cluster_size", "Maximum cluster size to save", false, 100000, "int");
   TCLAP::ValueArg<int> smooth_window_size_arg(
-      "", "smooth_window_size", "Size of the window for smoothing", false, 9, "int")
+      "", "smooth_window_size", "Size of the window for smoothing", false, 9, "int");
   TCLAP::ValueArg<int> ground_remove_angle_arg(
         "", "ground_remove_angle", "Angle to remove ground", false, 7, "int");
          
-  cmd.add(angle_arg);
+  cmd.add(theta_separation_thes_arg);
   cmd.add(num_beams_arg);
+  cmd.add(min_cluster_size_arg);
+  cmd.add(max_cluster_size_arg);
+  cmd.add(smooth_window_size_arg);
+  cmd.add(ground_remove_angle_arg);
+
   cmd.parse(argc, argv);
 
-  Radians angle_tolerance = Radians::FromDegrees(angle_arg.getValue());
-  Radians remove_angle = Radians::FromDegrees(ground_remove_angle_arg.getValue());
+  Radians theta_separation_thes = Radians::FromDegrees(theta_separation_thes_arg.getValue());
+  Radians ground_remove_angle = Radians::FromDegrees(ground_remove_angle_arg.getValue());
 
   std::unique_ptr<ProjectionParams> proj_params_ptr = nullptr;
   switch (num_beams_arg.getValue()) {
@@ -181,7 +213,7 @@ int main(int argc, char* argv[]) {
   }
   if (!proj_params_ptr) {
     fprintf(stderr,
-            "ERROR: wrong number of beams: %d. Should be in [16, 32, 64].\n",
+            "ERROR: wrong number of beams: %d. Should be in {64, 0}\n",
             num_beams_arg.getValue());
     exit(1);
   }
@@ -189,11 +221,17 @@ int main(int argc, char* argv[]) {
   rclcpp::init(argc, argv);
   rclcpp::executors::SingleThreadedExecutor executor;
 
-  executor.add_node(std::make_shared<DepthClusteringNode>(angle_tolerance, remove_angle, proj_params_ptr,
-                                                          min_cluster_size_arg.getValue(), max_cluster_size_arg.getValue(), 
-                                                          smooth_window_size_arg.getValue(), ground_remove_angle_arg.getValue()));
-  
+  auto node = std::shared_ptr<DepthClusteringNode>(new DepthClusteringNode(
+    theta_separation_thes, ground_remove_angle, std::move(proj_params_ptr),
+    min_cluster_size_arg.getValue(), max_cluster_size_arg.getValue(), smooth_window_size_arg.getValue()
+  ));
+  executor.add_node(node);
+
   executor.spin();
+
+  rclcpp::shutdown();
+
+  return 0;
 }
 
 }

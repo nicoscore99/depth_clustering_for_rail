@@ -42,6 +42,14 @@ namespace TCLAP {
 template<class T>
 class ValueArg : public Arg 
 {
+
+    private:
+        /**
+            * Prevent accidental copying
+            */
+        ValueArg(const ValueArg<T>& rhs);
+        ValueArg& operator=(const ValueArg<T>& rhs);
+
     protected:
 
         /**
@@ -234,14 +242,7 @@ class ValueArg : public Arg
          */
         virtual std::string longID(const std::string& val = "val") const;
         
-        virtual void reset() ;
-
-private:
-       /**
-        * Prevent accidental copying
-        */
-       ValueArg<T>(const ValueArg<T>& rhs);
-       ValueArg<T>& operator=(const ValueArg<T>& rhs);
+        virtual void reset();
 };
 
 

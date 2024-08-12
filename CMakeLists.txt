@@ -30,7 +30,7 @@ include(DistVersion.cmake)
 system_info(DISTRO)
 message(STATUS "DISTRO: ${DISTRO}")
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -116,28 +116,26 @@ endif()
 message(STATUS "Linking against Qt libs: ${MY_QT_LIBRARIES}")
 message(STATUS "Linking against QGlViewer lib: ${QGLVIEWER_LIBRARY}")
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-# find_package(catkin COMPONENTS
-#   roscpp
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(message_filters REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(foxg)
+
+# find_package(ament_cmake REQUIRED
+#   rclcpp
 #   sensor_msgs
 #   std_msgs
 #   nav_msgs
 #   message_filters
-#   tf
+#   tf2
 #   eigen_conversions
 # )
-
-find_package(ament_cmake REQUIRED
-  rclcpp
-  sensor_msgs
-  std_msgs
-  nav_msgs
-  message_filters
-  tf2
-  eigen_conversions
-)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -198,7 +196,6 @@ endif()
 include_directories(
   include
   src
-  src/ros2
   # for QT moc files
   ${PROJECT_BINARY_DIR}/src
   # dependencies we have no control over
@@ -206,7 +203,6 @@ include_directories(
   SYSTEM ${Boost_INCLUDE_DIRS}
   SYSTEM ${PCL_INCLUDE_DIRS}
   SYSTEM ${OpenCV_INCLUDE_DIRS}
-  # -I/usr/local/include/opencv4
   SYSTEM ${OpenGL_INCLUDE_DIRS}
   SYSTEM ${QGLVIEWER_INCLUDE_DIR}
 )
