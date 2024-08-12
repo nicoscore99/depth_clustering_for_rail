@@ -19,3 +19,8 @@
 ## DEALINGS IN THE SOFTWARE.
 
 add_library(identifiable SHARED identifiable.cpp)
+
+install(TARGETS
+  identifiable
+  DESTINATION lib/
+)

@@ -16,7 +16,9 @@ DepthClusteringNode::DepthClusteringNode(const Radians& theta_separation_thes, c
       _smooth_window_size(smooth_window_size),
       _ground_remove_angle(ground_remove_angle),
       _proj_params_ptr(std::move(proj_params_ptr)),
-      ground_remover(*_proj_params_ptr, _ground_remove_angle, _smooth_window_size) {  // Initializing ground_remover
+      ground_remover(*_proj_params_ptr, _ground_remove_angle, _smooth_window_size),
+      clusterer(_theta_separation_thes, min_cluster_size, max_cluster_size) {
+
 
     cloud_callback_group = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     rclcpp::SubscriptionOptions cloud_options;
@@ -28,20 +30,21 @@ DepthClusteringNode::DepthClusteringNode(const Radians& theta_separation_thes, c
         std::bind(&DepthClusteringNode::cloud_callback, this, std::placeholders::_1),
         cloud_options);
 
-    ImageBasedClusterer<LinearImageLabeler<>> clusterer(_theta_separation_thes, _ground_remove_angle.val(), _smooth_window_size);
+    clusterer.SetDiffType(DiffFactory::DiffType::ANGLES);
     ground_remover.AddClient(&clusterer);
     clusterer.AddClient(this);
 }
 
 void DepthClusteringNode::OnNewObjectReceived(const std::unordered_map<uint16_t, Cloud>& clouds, const int) {
-    fprintf(stderr, "INFO: received %lu clusters\n", clouds.size());
+    for (const auto& kv : clouds) {
+        fprintf(stderr, "INFO: received cluster with %lu points\n", kv.second.size());
+    }
 }
 
 Cloud::Ptr DepthClusteringNode::RosCloudToCloud(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
     uint32_t x_offset = msg->fields[0].offset;
     uint32_t y_offset = msg->fields[1].offset;
     uint32_t z_offset = msg->fields[2].offset;
-    uint32_t ring_offset = msg->fields[4].offset;
 
     Cloud cloud;
     for (uint32_t point_start_byte = 0, counter = 0;
@@ -51,7 +54,6 @@ Cloud::Ptr DepthClusteringNode::RosCloudToCloud(const sensor_msgs::msg::PointClo
         point.x() = BytesTo<float>(msg->data, point_start_byte + x_offset);
         point.y() = BytesTo<float>(msg->data, point_start_byte + y_offset);
         point.z() = BytesTo<float>(msg->data, point_start_byte + z_offset);
-        point.ring() = BytesTo<uint16_t>(msg->data, point_start_byte + ring_offset);
         cloud.push_back(point);
     }
 
@@ -62,10 +64,10 @@ Cloud::Ptr DepthClusteringNode::RosCloudToCloud(const sensor_msgs::msg::PointClo
 void DepthClusteringNode::cloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
     Cloud::Ptr cloud_ptr = RosCloudToCloud(msg);
     cloud_ptr->InitProjection(*_proj_params_ptr);
-    this->ground_remover.OnNewObjectReceived(*cloud_ptr, 0);
+    ground_remover.OnNewObjectReceived(*cloud_ptr, 0);
 }
 
-} // namespace depth_clustering
+}  // namespace depth_clustering
 
 int main(int argc, char* argv[]) {
     TCLAP::CmdLine cmd(
@@ -76,11 +78,11 @@ int main(int argc, char* argv[]) {
         "Threshold angle. Below this value, the objects are separated", false, 10,
         "int");
     TCLAP::ValueArg<int> min_cluster_size_arg(
-        "", "min_cluster_size", "Minimum cluster size to save", false, 20, "int");
+        "", "min_cluster_size", "Minimum cluster size to save", false, 10, "int");
     TCLAP::ValueArg<int> max_cluster_size_arg(
         "", "max_cluster_size", "Maximum cluster size to save", false, 100000, "int");
     TCLAP::ValueArg<int> smooth_window_size_arg(
-        "", "smooth_window_size", "Size of the window for smoothing", false, 9, "int");
+        "", "smooth_window_size", "Size of the window for smoothing", false, 5, "int");
     TCLAP::ValueArg<int> ground_remove_angle_arg(
         "", "ground_remove_angle", "Angle to remove ground", false, 7, "int");
          

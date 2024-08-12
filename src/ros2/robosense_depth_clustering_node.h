@@ -16,16 +16,21 @@
 
 namespace depth_clustering {
 
+using std::unordered_map;
+
 class DepthClusteringNode : public rclcpp::Node,
                             public AbstractClient<std::unordered_map<uint16_t, Cloud>> {
 public:
     // Constructor
     DepthClusteringNode(const Radians& theta_separation_thes, const Radians& ground_remove_angle, 
-                        std::unique_ptr<ProjectionParams> proj_params_ptr, int min_cluster_size, 
-                        int max_cluster_size, int smooth_window_size);
+                        std::unique_ptr<ProjectionParams> proj_params_ptr, 
+                        int min_cluster_size, int max_cluster_size, int smooth_window_size);
 
     // Callback for handling new clusters
     void OnNewObjectReceived(const std::unordered_map<uint16_t, Cloud>& clouds, const int) override;
+
+    // Public member variable to allow external access to the clusterer
+    ImageBasedClusterer<LinearImageLabeler<>> clusterer;
 
 private:
     // Converts ROS PointCloud2 messages to custom Cloud type
@@ -36,9 +41,9 @@ private:
 
     // Member variables
     Radians _theta_separation_thes;
-    std::int16_t _min_cluster_size;
-    std::int16_t _max_cluster_size;
-    std::int16_t _smooth_window_size;
+    std::int32_t _min_cluster_size;
+    std::int32_t _max_cluster_size;
+    std::int32_t _smooth_window_size;
     const Radians& _ground_remove_angle;
     std::unique_ptr<ProjectionParams> _proj_params_ptr;
     DepthGroundRemover ground_remover;

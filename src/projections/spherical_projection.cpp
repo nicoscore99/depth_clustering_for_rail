@@ -63,7 +63,7 @@ void SphericalProjection::InitFromPoints(
     //   current_written_depth = dist_to_sensor;
     // }
   }
-  FixDepthSystematicErrorIfNeeded();
+  // FixDepthSystematicErrorIfNeeded();
 }
 
 typename CloudProjection::Ptr SphericalProjection::Clone() const {

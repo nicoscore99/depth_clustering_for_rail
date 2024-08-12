@@ -39,4 +39,12 @@ target_link_libraries(folder_reader
 add_library(bbox bbox.cpp)
 target_link_libraries(bbox cloud)
 
+install(TARGETS
+    cloud
+    velodyne_utils
+    folder_reader
+    bbox
+    DESTINATION lib/
+    )
+
 

@@ -13,3 +13,8 @@ if(${PCL_FOUND})
   add_library(cloud_saver SHARED cloud_saver.cpp)
   target_link_libraries(cloud_saver ${PCL_LIBRARIES} ${OpenCV_LIBS})
 endif()
+
+install(TARGETS
+    visualization
+    DESTINATION lib/
+    )

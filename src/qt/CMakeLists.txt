@@ -28,3 +28,8 @@ add_subdirectory(widgets)
 add_executable(qt_gui_app main.cpp)
 target_link_libraries(qt_gui_app
                       qt_widgets)
+
+install(TARGETS
+    qt_gui_app
+    DESTINATION bin/
+    )

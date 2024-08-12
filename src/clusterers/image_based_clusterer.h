@@ -62,8 +62,8 @@ class ImageBasedClusterer : public AbstractClusterer {
    * @param[in]  max_cluster_size  The maximum cluster size to send
    */
   explicit ImageBasedClusterer(Radians angle_tollerance = 8_deg,
-                               uint16_t min_cluster_size = 100,
-                               uint16_t max_cluster_size = 25000)
+                               uint32_t min_cluster_size = 100,
+                               uint32_t max_cluster_size = 25000)
       : AbstractClusterer(0.0, min_cluster_size, max_cluster_size),
         _counter(0),
         _angle_tollerance(angle_tollerance),
@@ -130,7 +130,7 @@ class ImageBasedClusterer : public AbstractClusterer {
           // this is a default label, skip
           continue;
         }
-        for (const auto& point_idx : point_container.points()) {
+        for (const auto& point_idx : point_container.points()) {          
           const auto& point = cloud.points()[point_idx];
           clusters[label].push_back(point);
         }
@@ -149,7 +149,7 @@ class ImageBasedClusterer : public AbstractClusterer {
     for (auto label : labels_to_erase) {
       clusters.erase(label);
     }
-
+    
     fprintf(stderr, "INFO: prepared clusters in: %lu us\n", timer.measure());
 
     this->ShareDataWithAllClients(clusters);

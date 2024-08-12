@@ -25,3 +25,8 @@ add_library(projections SHARED
             spherical_projection.cpp)
 
 target_link_libraries(projections ${OpenCV_LIBS})
+
+install(TARGETS
+    projections
+    DESTINATION lib/
+    )

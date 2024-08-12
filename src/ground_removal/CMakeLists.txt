@@ -25,3 +25,9 @@ target_link_libraries(ground_remove
                       difference
                       ${PCL_LIBRARIES}
                       ${OpenCV_LIBS})
+
+install(TARGETS
+    ground_remove
+    
+    DESTINATION lib/
+    )

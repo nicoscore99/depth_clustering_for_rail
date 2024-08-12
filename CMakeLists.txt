@@ -51,9 +51,9 @@ SET(CMAKE_MODULE_PATH
       "/usr/share/cmake-2.8/Modules"  ## Hack for travis
     )
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY install/depth_clustering_for_rail/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY install/depth_clustering_for_rail/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY install/depth_clustering_for_rail/bin)
 
 include(CTest)
 IF(IS_DIRECTORY "/usr/src/gtest/")

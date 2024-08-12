@@ -49,9 +49,9 @@ class AbstractClusterer
    * @param[in]  skip                Only cluster every skip cloud
    */
   explicit AbstractClusterer(double cluster_tollerance = 0.2,
-                             uint16_t min_cluster_size = 100,
-                             uint16_t max_cluster_size = 25000,
-                             uint16_t skip = 10)
+                             uint32_t min_cluster_size = 100,
+                             uint32_t max_cluster_size = 25000,
+                             uint32_t skip = 10)
       : Receiver(),
         Sender(SenderType::STREAMER),
         _cluster_tollerance(cluster_tollerance),
@@ -63,9 +63,9 @@ class AbstractClusterer
 
  protected:
   double _cluster_tollerance;
-  uint16_t _min_cluster_size;
-  uint16_t _max_cluster_size;
-  uint16_t _skip;
+  uint32_t _min_cluster_size;
+  uint32_t _max_cluster_size;
+  uint32_t _skip;
   uint32_t _counter;
 };
 
