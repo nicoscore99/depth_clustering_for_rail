@@ -20,6 +20,7 @@
 
 add_subdirectory(communication)
 add_subdirectory(ground_removal)
+add_subdirectory(rotating_calipers)
 add_subdirectory(image_labelers)
 add_subdirectory(visualization)
 add_subdirectory(projections)

@@ -13,10 +13,13 @@
 #include "utils/cloud.h"
 #include "utils/radians.h"
 #include "clusterers/image_based_clusterer.h"
+#include "pcl/surface/convex_hull.h"
+#include "rotating_calipers/RotatingCalipers.h"
 
 namespace depth_clustering {
 
 using std::unordered_map;
+using std::vector;
 
 class DepthClusteringNode : public rclcpp::Node,
                             public AbstractClient<std::unordered_map<uint16_t, Cloud>> {
@@ -38,6 +41,8 @@ private:
 
     // Callback for PointCloud2 subscription
     void cloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
+
+    MinAreaRect generate_bbox(const Cloud& _cloud);
 
     // Member variables
     Radians _theta_separation_thes;

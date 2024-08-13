@@ -1,0 +1,3 @@
+[submodule "src/RotatingCalipers"]
+	path = src/RotatingCalipers
+	url = git@github.com:DreamVersion/RotatingCalipers.git

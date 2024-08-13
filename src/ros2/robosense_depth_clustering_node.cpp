@@ -2,6 +2,7 @@
 #include "projections/projection_params.h"
 #include "./utils.h"
 #include "tclap/CmdLine.h"
+#include <utils/cloud.h>
 
 namespace depth_clustering {
 
@@ -36,9 +37,16 @@ DepthClusteringNode::DepthClusteringNode(const Radians& theta_separation_thes, c
 }
 
 void DepthClusteringNode::OnNewObjectReceived(const std::unordered_map<uint16_t, Cloud>& clouds, const int) {
+
+    std::vector<MinAreaRect> bboxes;
+
     for (const auto& kv : clouds) {
-        fprintf(stderr, "INFO: received cluster with %lu points\n", kv.second.size());
+        const auto& cluster = kv.second;
+        bboxes.push_back(generate_bbox(cluster));
     }
+
+    // Do something with the bounding boxes
+    // ...
 }
 
 Cloud::Ptr DepthClusteringNode::RosCloudToCloud(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
@@ -65,6 +73,25 @@ void DepthClusteringNode::cloud_callback(const sensor_msgs::msg::PointCloud2::Sh
     Cloud::Ptr cloud_ptr = RosCloudToCloud(msg);
     cloud_ptr->InitProjection(*_proj_params_ptr);
     ground_remover.OnNewObjectReceived(*cloud_ptr, 0);
+}
+
+MinAreaRect DepthClusteringNode::generate_bbox(const Cloud& _cloud) {
+    std::vector<int> hull_idcs = ConvexHullIndices(_cloud);
+
+    Cloud hull_points;
+    for (int idx : hull_idcs) {
+        hull_points.push_back(_cloud[idx]);
+    }
+
+    // Only take the x, y axis of the points
+    std::vector<Point> pts;
+    for (const auto& point : hull_points.points()) {
+        pts.push_back(Point{point.x(), point.y()});
+    }
+
+    MinAreaRect res = RotatingCalipers::minAreaRect(pts);
+
+    return res;
 }
 
 }  // namespace depth_clustering
