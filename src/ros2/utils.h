@@ -23,7 +23,6 @@ T BytesTo(const std::vector<uint8_t>& data, uint32_t start_idx) {
     return result;
 }
 
-
 namespace depth_clustering {
 
 std::vector<int> ConvexHullIndices(const depth_clustering::Cloud& cloud) {

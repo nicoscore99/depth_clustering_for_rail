@@ -3,6 +3,7 @@
 #include "./utils.h"
 #include "tclap/CmdLine.h"
 #include <utils/cloud.h>
+#include "utils/timer.h"
 
 
 namespace depth_clustering {
@@ -28,7 +29,6 @@ DepthClusteringNode::DepthClusteringNode(const Radians theta_separation_thes, co
     RCLCPP_INFO(this->get_logger(), "_min_cluster_size: %d", _min_cluster_size);
     RCLCPP_INFO(this->get_logger(), "_max_cluster_size: %d", _max_cluster_size);
     RCLCPP_INFO(this->get_logger(), "_smooth_window_size: %d", _smooth_window_size);
-    RCLCPP_INFO(this->get_logger(), "_proj_params_ptr is %s", _proj_params_ptr ? "not null" : "null");
 
     if (!_proj_params_ptr) {
         RCLCPP_ERROR(this->get_logger(), "proj_params_ptr is null");
@@ -39,21 +39,26 @@ DepthClusteringNode::DepthClusteringNode(const Radians theta_separation_thes, co
     fprintf(stderr, "INFO: _ground_remove_angle: %f\n", _ground_remove_angle.val());
     fprintf(stderr, "INFO: _theta_separation_thes: %f\n", _theta_separation_thes.val());
 
-    cloud_callback_group = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    // cloud_callback_group = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
     rclcpp::SubscriptionOptions cloud_options;
-    cloud_options.callback_group = cloud_callback_group;
+    // cloud_options.callback_group = cloud_callback_group;
+
+    // cloud_subscriber = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+    //     "/rslidar_points", 
+    //     rclcpp::SensorDataQoS(),
+    //     std::bind(&DepthClusteringNode::cloud_callback, this, std::placeholders::_1),
+    //     cloud_options);
 
     cloud_subscriber = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        "/rslidar_points", 
-        rclcpp::SensorDataQoS(),
-        std::bind(&DepthClusteringNode::cloud_callback, this, std::placeholders::_1),
-        cloud_options);
+        cloud_subscription_topic,
+        10,
+        std::bind(&DepthClusteringNode::cloud_callback, this, std::placeholders::_1));
 
     cluster_array_publisher = this->create_publisher<depth_clustering_for_rail_interfaces::msg::ClusterArray>(
-        "depth_clustering/clusters", 10);
+        cluster_array_publish_topic, 10);
 
     scene_update_publisher = this->create_publisher<foxglove_msgs::msg::SceneUpdate>(
-        "scene_update", 10);
+        scene_update_publish_topic, 10);
 
     clusterer.SetDiffType(DiffFactory::DiffType::ANGLES);
     ground_remover.AddClient(&clusterer);
@@ -214,15 +219,24 @@ void DepthClusteringNode::OnNewObjectReceived(const std::unordered_map<uint16_t,
 
     std::vector<std::vector<float>> bboxes;
 
+    time_utils::Timer timer;
+
     for (const auto& kv : clouds) {
         const auto& cluster = kv.second;
         bboxes.push_back(generate_bbox(cluster));
     }
+
+    fprintf(stderr, "INFO: generated bboxes in: %lu us\n", timer.measure());
+
     depth_clustering_for_rail_interfaces::msg::ClusterArray cluster_array = generate_cluster_array_msg(clouds, bboxes);
     cluster_array_publisher->publish(cluster_array);
 
+    fprintf(stderr, "INFO: published cluster array in: %lu us\n", timer.measure());
+
     foxglove_msgs::msg::SceneUpdate scene_update = generate_scene_update_msg(bboxes);
     scene_update_publisher->publish(scene_update);
+
+    fprintf(stderr, "INFO: published scene update in: %lu us\n", timer.measure());
 }
 
 Cloud::Ptr DepthClusteringNode::RosCloudToCloud(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
@@ -245,8 +259,25 @@ Cloud::Ptr DepthClusteringNode::RosCloudToCloud(const sensor_msgs::msg::PointClo
     return cloud_ptr;
 }
 
+Cloud::Ptr DepthClusteringNode::ReduceCloud(const Cloud::Ptr& cloud) {
+    Cloud::Ptr reduced_cloud_ptr = boost::make_shared<Cloud>();
+
+    for (const auto& point : cloud->points()) {
+        if (point.x() >= x_min && point.x() <= x_max && point.y() >= y_min && point.y() <= y_max && point.z() >= z_min && point.z() <= z_max) {
+            reduced_cloud_ptr->push_back(point);
+        }
+    }
+
+    return reduced_cloud_ptr;
+}
+
 void DepthClusteringNode::cloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+
+        // Print message for callback
+    fprintf(stderr, "RECEIVED POINT CLOUD\n");
     Cloud::Ptr cloud_ptr = RosCloudToCloud(msg);
+    // Reduce the cloud
+    cloud_ptr = ReduceCloud(cloud_ptr);
     cloud_ptr->InitProjection(*_proj_params_ptr);
     ground_remover.OnNewObjectReceived(*cloud_ptr, 0);
 }
@@ -283,12 +314,11 @@ std::vector<float> DepthClusteringNode::generate_bbox(const Cloud& _cloud) {
     float width = res.width;
     float length = res.height;
     float height = z_max - z_min;
-    float yaw = res.angle_height;
+    float yaw = res.angle_width;
 
     std::vector<float> bbox = {x_center, y_center, z_center, width, length, height, yaw};
-
-    // Print the bounding box
-    fprintf(stderr, "INFO: Bounding box: x: %f, y: %f, z: %f, w: %f, l: %f, h: %f, yaw: %f\n", x_center, y_center, z_center, width, length, height, yaw);
+    // // Print the bounding box
+    // fprintf(stderr, "INFO: Bounding box: x: %f, y: %f, z: %f, w: %f, l: %f, h: %f, yaw: %f\n", x_center, y_center, z_center, width, length, height, yaw);
 
     return bbox;
 }
@@ -317,7 +347,6 @@ int main(int argc, char* argv[]) {
     cmd.add(max_cluster_size_arg);
     cmd.add(smooth_window_size_arg);
     cmd.add(ground_remove_angle_arg);
-
     cmd.parse(argc, argv);
 
     depth_clustering::Radians theta_separation_thes = depth_clustering::Radians::FromDegrees(theta_separation_thes_arg.getValue());
@@ -325,15 +354,16 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<depth_clustering::ProjectionParams> proj_params_ptr = depth_clustering::ProjectionParams::ROBOSENSE();
     
     rclcpp::init(argc, argv);
-    rclcpp::executors::SingleThreadedExecutor executor;
+    // rclcpp::executors::MultiThreadedExecutor executor;
 
     auto node = std::shared_ptr<depth_clustering::DepthClusteringNode>(new depth_clustering::DepthClusteringNode(
         theta_separation_thes, ground_remove_angle, std::move(proj_params_ptr),
-        min_cluster_size_arg.getValue(), max_cluster_size_arg.getValue(), smooth_window_size_arg.getValue()
-    ));
-    executor.add_node(node);
+        min_cluster_size_arg.getValue(), max_cluster_size_arg.getValue(), smooth_window_size_arg.getValue()));
+    // executor.add_node(node);
 
-    executor.spin();
+    // executor.spin();
+
+    rclcpp::spin(node);
 
     rclcpp::shutdown();
 

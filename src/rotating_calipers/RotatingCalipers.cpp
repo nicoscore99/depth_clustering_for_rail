@@ -50,7 +50,7 @@ double RotatingCalipers::diameter(const vector<Point> &p)
 
     double res = 0;
     for (size_t i = 0, j = k; i <= k && j < m; i++)
-    {
+    { 
         res = max(res, dist(h[i], h[j]));
         while (j < m && area(h[i], h[(i + 1) % m], h[(j + 1) % m]) > area(h[i], h[(i + 1) % m], h[j]))
         {
@@ -264,7 +264,7 @@ MinAreaRect RotatingCalipers::minAreaRect(const vector<Point> &p)
     min_area_rect.width = std::sqrt(out1.x * out1.x + out1.y * out1.y);
     min_area_rect.height = std::sqrt(out2.x * out2.x + out2.y * out2.y);
     min_area_rect.angle_width = atan2(out1.y, out1.x);
-    min_area_rect.angle_height = atan2(out2.y, out2.y);
+    min_area_rect.angle_height = atan2(out2.y, out2.x);
 
     return min_area_rect;
 }

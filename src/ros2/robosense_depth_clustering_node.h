@@ -58,6 +58,9 @@ private:
     // Converts ROS PointCloud2 messages to custom Cloud type
     Cloud::Ptr RosCloudToCloud(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
 
+    // ReduceCloud
+    Cloud::Ptr ReduceCloud(const Cloud::Ptr& cloud);
+
     // Converts the clusters to a ClusterArray message 
     depth_clustering_for_rail_interfaces::msg::ClusterArray generate_cluster_array_msg(const std::unordered_map<uint16_t, Cloud>& clouds,
                                                                                    const std::vector<std::vector<float>>& bboxes);
@@ -75,7 +78,18 @@ private:
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cloud_subscriber;
     rclcpp::Publisher<depth_clustering_for_rail_interfaces::msg::ClusterArray>::SharedPtr cluster_array_publisher;
     rclcpp::Publisher<foxglove_msgs::msg::SceneUpdate>::SharedPtr scene_update_publisher;
-    rclcpp::CallbackGroup::SharedPtr cloud_callback_group;
+    // rclcpp::CallbackGroup::SharedPtr cloud_callback_group;
+
+    std::string cloud_subscription_topic = "/rslidar_points";
+    std::string cluster_array_publish_topic = "depth_clustering_for_rail/cluster_array";
+    std::string scene_update_publish_topic = "depth_clustering_for_rail/scene_update";
+
+    float x_min = 0.0;
+    float x_max = 80.0;
+    float y_min = -40.0;
+    float y_max = 40.0;
+    float z_min = -1.0;
+    float z_max = 3.0;
 };
 
 }  // namespace depth_clustering
