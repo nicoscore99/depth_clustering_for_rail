@@ -5,6 +5,9 @@
 #include <iostream>
 #include "RotatingCalipers.h"
 
+namespace rotating_calipers
+{
+
 double RotatingCalipers::_distance(const Point &start, const Point &end, const Point &point)
 {
     double dist = (point.y - start.y) * (end.x - start.x) - (point.x - start.x) * (end.y - start.y);
@@ -61,9 +64,9 @@ double RotatingCalipers::diameter(const vector<Point> &p)
 MinAreaRect RotatingCalipers::minAreaRect(const vector<Point> &p)
 {
     vector<Point> points = convexHull(p);
-    cout << "convexHull" << endl;
-    for (size_t i = 0; i < points.size(); i++)
-        cout << "(" << points[i].x << "," << points[i].y << ")," << endl;
+    // cout << "convexHull" << endl;
+    // for (size_t i = 0; i < points.size(); i++)
+    //     cout << "(" << points[i].x << "," << points[i].y << ")," << endl;
     double min_area = numeric_limits<double>::max();
     double max_dist = 0;
     size_t left = 0, bottom = 0, right = 0, top = 0;
@@ -265,3 +268,5 @@ MinAreaRect RotatingCalipers::minAreaRect(const vector<Point> &p)
 
     return min_area_rect;
 }
+
+} // namespace rotating_calipers

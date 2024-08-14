@@ -2,11 +2,12 @@
 // Created by melonqi on 2018/7/25.
 //
 
-#ifndef MABB_ROTATINGCALIPERS_H
-#define MABB_ROTATINGCALIPERS_H
 
 #include <vector>
 #include <cmath>
+
+namespace rotating_calipers
+{
 
 using namespace std;
 
@@ -77,5 +78,4 @@ public:
     static MinAreaRect minAreaRect(const vector<Point> &p);
 };
 
-
-#endif //MABB_ROTATINGCALIPERS_H
+} // namespace rotating_calipers

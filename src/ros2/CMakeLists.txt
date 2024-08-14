@@ -14,6 +14,7 @@ target_link_libraries(robosense_depth_clustering_node
                       projections
                       ground_remove
                       folder_reader
+                      rotating_calipers
                       viewer
                       ${MY_QT_LIBRARIES}
                       ${Boost_LIBRARIES}
@@ -21,7 +22,8 @@ target_link_libraries(robosense_depth_clustering_node
                       ${OpenCV_LIBS}
                       ${CMAKE_THREAD_LIBS_INIT})
 
-ament_target_dependencies(robosense_depth_clustering_node rclcpp sensor_msgs std_msgs nav_msgs message_filters tf2 Eigen3 visualization_msgs)
+ament_target_dependencies(robosense_depth_clustering_node rclcpp sensor_msgs std_msgs nav_msgs message_filters 
+                          tf2 Eigen3 visualization_msgs depth_clustering_for_rail_interfaces foxglove_msgs)
 
 install(TARGETS
   robosense_depth_clustering_node

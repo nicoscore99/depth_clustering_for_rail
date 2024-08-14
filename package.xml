@@ -1,4 +1,5 @@
 <?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>depth_clustering_for_rail</name>
   <version>1.1.0</version>
@@ -16,6 +17,9 @@
   <build_depend>message_filters</build_depend>
   <build_depend>tf</build_depend>
   <build_depend>eigen_conversions</build_depend>
+  <!-- <build_depend>buildin_interfaces</build_depend>
+  <build_depend>rosidl_default_generators</build_depend> -->
+
 
   <exec_depend>roscpp</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
@@ -24,6 +28,14 @@
   <exec_depend>message_filters</exec_depend>
   <exec_depend>tf</exec_depend>
   <exec_depend>eigen_conversions</exec_depend>
+  <exec_depend>foxglove_bridge</exec_depend>
+  <exec_depend>foxglove_msgs</exec_depend>
+  <depend>ros_foxglove_msgs</depend>
+  <exec_depend>depth_clustering_for_rail_interfaces</exec_depend>
+
+  <!-- <exec_depend>builtin_interfaces</exec_depend>
+  <exec_depend>rosidl_interface_packages</exec_depend>
+  <member_of_group>rosidl_interface_packages</member_of_group> -->
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

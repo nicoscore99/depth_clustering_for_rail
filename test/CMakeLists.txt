@@ -30,6 +30,7 @@ target_link_libraries(depth_clustering_test
                     image_labeler
                     ground_remove
                     difference
+                    rotating_calipers
                     ${catkin_LIBRARIES}
                     ${PCL_LIBRARIES}
                     ${OpenCV_LIBS}
